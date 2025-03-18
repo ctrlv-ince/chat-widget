@@ -1,263 +1,140 @@
-    <!-- Chat Widget -->
-    <div id="chat-widget">
-        <!-- Chat Header -->
-        <div id="chat-header" onclick="toggleChat()">
-            <span>Chat with Friends</span>
-            <a id="view-full-chat" href="#" onclick="event.stopPropagation();">View Full Chat</a>
-            <span id="chat-toggle-icon">▼</span>
-        </div>
-
-        <!-- Chat Body -->
-        <div id="chat-body">
-            <!-- Friend Selection -->
-            <div id="friend-selector" class="p-2">
-                <select id="friend-select" class="form-select mb-2">
-                    <option value="">Select a friend...</option>
-                </select>
-                <div id="chat-friend-info"></div>
-            </div>
-
-            <div id="chat-messages"></div>
-            <div id="chat-input-container">
-                <input type="text" id="chat-input" placeholder="Type a message..." disabled>
-                <button id="chat-send-btn" onclick="sendMessage()" disabled>Send</button>
-            </div>
-        </div>
+<!-- Chat Widget -->
+<div id="chat-widget">
+    <!-- Chat Header -->
+    <div id="chat-header" onclick="toggleChat()">
+        <span>Chat with Friends</span>
+        <a id="view-full-chat" href="#" onclick="event.stopPropagation();">View Full Chat</a>
+        <span id="chat-toggle-icon">▼</span>
     </div>
 
-    <script>
-        let isChatOpen = false;
-        let currentConversationId = null;
-        let currentFriendId = null;
-        let currentFriendName = null;
-        let messageInterval = null;
+    <!-- Chat Body -->
+    <div id="chat-body">
+        <!-- Friend Selection -->
+        <div id="friend-selector" class="p-2">
+            <select id="friend-select" class="form-select mb-2">
+                <option value="">Select a friend...</option>
+            </select>
+            <div id="chat-friend-info"></div>
+        </div>
 
-        // Load friends when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            loadFriends();
-            document.getElementById('chat-widget').style.display = 'block';
-        });
+        <div id="chat-messages"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type a message..." disabled>
+            <button id="chat-send-btn" onclick="sendMessage()" disabled>Send</button>
+        </div>
+    </div>
+</div>
 
-        function loadFriends() {
-            console.log('Loading friends for user ID:', 'USER_ID_PLACEHOLDER');
-            $.ajax({
-                url: 'PATH_TO_GET_FRIENDS_SCRIPT',
-                type: 'GET',
-                data: {
-                    user_id: 'USER_ID_PLACEHOLDER'
-                },
-                dataType: 'json',
-                success: function(response) {
-                    console.log('Friends response:', response);
-                    if (response.status === 'success') {
-                        const friendSelect = document.getElementById('friend-select');
-                        friendSelect.innerHTML = '<option value="">Select a friend...</option>';
+<style>
+    /* Chat Widget Container */
+    #chat-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        z-index: 1000;
+    }
 
-                        if (response.friends && response.friends.length > 0) {
-                            response.friends.forEach(friend => {
-                                const option = document.createElement('option');
-                                option.value = JSON.stringify({
-                                    friend_id: friend.friend_id,
-                                    conversation_id: friend.conversation_id
-                                });
-                                option.textContent = `${friend.name} - Conversation #${friend.conversation_id}`;
-                                friendSelect.appendChild(option);
-                            });
-                        } else {
-                            console.log('No friends available to chat with');
-                            document.getElementById('chat-messages').innerHTML = '<div class="text-center p-3">No friends available to chat with right now</div>';
-                        }
+    /* Chat Header */
+    #chat-header {
+        background: #007bff;
+        color: #fff;
+        padding: 10px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-                        // Add change event listener
-                        friendSelect.addEventListener('change', function() {
-                            if (this.value) {
-                                const selected = JSON.parse(this.value);
-                                openChat(selected.conversation_id, selected.friend_id);
-                            } else {
-                                // Disable chat when no friend is selected
-                                document.getElementById('chat-input').disabled = true;
-                                document.getElementById('chat-send-btn').disabled = true;
-                                document.getElementById('chat-messages').innerHTML = '<div class="text-center p-3">Select a friend to start chatting</div>';
-                            }
-                        });
-                    } else {
-                        console.error('Error loading friends:', response.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('AJAX error loading friends:', error);
-                    console.error('Response:', xhr.responseText);
-                }
-            });
-        }
+    /* View Full Chat Link */
+    #view-full-chat {
+        color: #fff;
+        text-decoration: none;
+        margin-right: 10px;
+        font-size: 12px;
+    }
 
-        function openChat(conversationId, friendId) {
-            currentConversationId = conversationId;
-            currentFriendId = friendId;
+    #view-full-chat:hover {
+        text-decoration: underline;
+    }
 
-            // Enable chat input
-            document.getElementById('chat-input').disabled = false;
-            document.getElementById('chat-send-btn').disabled = false;
+    /* Chat Body */
+    #chat-body {
+        display: none;
+        flex-direction: column;
+        height: 300px;
+    }
 
-            // Update the "View Full Chat" link
-            document.getElementById('view-full-chat').href = `chat.php?conversation_id=${conversationId}&friend_id=${friendId}`;
+    /* Chat Messages */
+    #chat-messages {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+        background: #f9f9f9;
+    }
 
-            // Get friend name and fetch messages
-            fetchFriendInfo(friendId);
-            fetchMessages();
+    /* Chat Input Container */
+    #chat-input-container {
+        display: flex;
+        border-top: 1px solid #ddd;
+    }
 
-            // Open chat body if it's not already open
-            if (!isChatOpen) {
-                toggleChat();
-            }
+    /* Chat Input */
+    #chat-input {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        outline: none;
+    }
 
-            // Set up interval to fetch messages
-            if (messageInterval) {
-                clearInterval(messageInterval);
-            }
-            messageInterval = setInterval(fetchMessages, 5000);
-        }
+    /* Chat Send Button */
+    #chat-send-btn {
+        background: #007bff;
+        color: #fff;
+        border: none;
+        padding: 10px 15px;
+        cursor: pointer;
+    }
 
-        // Get friend information
-        function fetchFriendInfo(friendId) {
-            $.ajax({
-                url: 'PATH_TO_GET_FRIEND_INFO_SCRIPT',
-                type: 'GET',
-                data: {
-                    friend_id: friendId
-                },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success') {
-                        currentFriendName = response.friend.name;
+    /* Chat Toggle Icon */
+    #chat-toggle-icon {
+        font-size: 12px;
+    }
 
-                        // Display friend info
-                        const friendInfo = document.getElementById('chat-friend-info');
-                        friendInfo.innerHTML = `<div class="friend-info">
-                        <strong>Friend:</strong> ${currentFriendName}
-                    </div>`;
-                    }
-                },
-                error: function() {
-                    console.error('Error fetching friend information');
-                }
-            });
-        }
+    /* Message Styles */
+    .message {
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        border-radius: 10px;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
 
-        // Toggle Chat Widget
-        function toggleChat() {
-            const chatBody = document.getElementById('chat-body');
-            const chatToggleIcon = document.getElementById('chat-toggle-icon');
+    .sender {
+        background-color: #e3f2fd;
+        margin-left: auto;
+        border-bottom-right-radius: 0;
+    }
 
-            if (isChatOpen) {
-                chatBody.style.display = 'none';
-                chatToggleIcon.textContent = '▼';
-            } else {
-                chatBody.style.display = 'flex';
-                chatToggleIcon.textContent = '▲';
+    .receiver {
+        background-color: #f1f1f1;
+        margin-right: auto;
+        border-bottom-left-radius: 0;
+    }
 
-                // Scroll to bottom of messages
-                const chatMessages = document.getElementById('chat-messages');
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
+    #friend-selector {
+        background: #f8f9fa;
+        border-bottom: 1px solid #ddd;
+    }
 
-            isChatOpen = !isChatOpen;
-        }
-
-        function sendMessage() {
-            const messageInput = document.getElementById('chat-input');
-            const message = messageInput.value.trim();
-
-            if (message && currentConversationId && currentFriendId) {
-                console.log('Sending message to friend:', currentFriendId);
-                // Send message via AJAX
-                $.ajax({
-                    url: 'PATH_TO_SEND_MESSAGE_SCRIPT',
-                    type: 'POST',
-                    data: {
-                        conversation_id: currentConversationId,
-                        sender_id: 'USER_ID_PLACEHOLDER',
-                        receiver_id: currentFriendId,
-                        message: message
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        console.log('Send message response:', response);
-                        if (response.status === 'success') {
-                            messageInput.value = ''; // Clear input
-                            fetchMessages(); // Refresh messages
-                        } else {
-                            alert('Failed to send message: ' + response.message);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error sending message:', error);
-                        console.error('Response:', xhr.responseText);
-                    }
-                });
-            }
-        }
-
-        function fetchMessages() {
-            if (currentConversationId) {
-                console.log('Fetching messages for conversation:', currentConversationId);
-                $.ajax({
-                    url: 'PATH_TO_GET_MESSAGES_SCRIPT',
-                    type: 'GET',
-                    data: {
-                        conversation_id: currentConversationId
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        console.log('Messages response:', response);
-                        if (response.status === 'success') {
-                            const chatMessages = document.getElementById('chat-messages');
-                            chatMessages.innerHTML = ''; // Clear previous messages
-
-                            if (response.messages.length === 0) {
-                                chatMessages.innerHTML = '<div class="text-center p-3">No messages yet</div>';
-                                return;
-                            }
-
-                            response.messages.forEach(message => {
-                                // Check if the message is from the user or friend
-                                const messageClass = message.sender_id == 'USER_ID_PLACEHOLDER' ? 'sender' : 'receiver';
-                                const senderName = message.sender_id == 'USER_ID_PLACEHOLDER' ? 'You' : currentFriendName || 'Friend';
-
-                                // Format timestamp
-                                const messageDate = new Date(message.sent_at);
-                                const formattedTime = messageDate.toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                });
-
-                                chatMessages.innerHTML += `
-                            <div class="message ${messageClass}">
-                                <div class="message-header">
-                                    <strong>${senderName}</strong>
-                                    <span class="message-time">${formattedTime}</span>
-                                </div>
-                                <div class="message-content">${message.message}</div>
-                            </div>`;
-                            });
-
-                            // Auto-scroll to bottom
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error fetching messages:', error);
-                        console.error('Response:', xhr.responseText);
-                    }
-                });
-            }
-        }
-
-        // Handle Enter key in chat input
-        document.getElementById('chat-input').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                sendMessage();
-            }
-        });
-    </script>
+    #friend-select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+</style>
