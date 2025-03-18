@@ -1,0 +1,26 @@
+<!-- Chat Widget -->
+<div id="chat-widget">
+    <!-- Chat Header -->
+    <div id="chat-header" onclick="toggleChat()">
+        <span>Chat with Technicians</span>
+        <a id="view-full-chat" href="#" onclick="event.stopPropagation();">View Full Chat</a>
+        <span id="chat-toggle-icon">▼</span>
+    </div>
+
+    <!-- Chat Body -->
+    <div id="chat-body">
+        <!-- Technician Selection -->
+        <div id="technician-selector" class="p-2">
+            <select id="technician-select" class="form-select mb-2">
+                <option value="">Select a technician...</option>
+            </select>
+            <div id="chat-technician-info"></div>
+        </div>
+
+        <div id="chat-messages"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type a message..." disabled>
+            <button id="chat-send-btn" onclick="sendMessage()" disabled>Send</button>
+        </div>
+    </div>
+</div>
